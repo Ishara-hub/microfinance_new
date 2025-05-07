@@ -1,0 +1,18 @@
+
+/* Loan Page Styles */
+.loan-form {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+}
+.loan-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.loan-table th, .loan-table td {
+    padding: 10px;
+    border: 1px solid #dee2e6;
+}
+.loan-table th {
+    background-color: #f1f1f1;
+}

@@ -1,0 +1,18 @@
+
+/* Savings Section Styles */
+.savings-summary {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+}
+.savings-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.savings-table th, .savings-table td {
+    padding: 10px;
+    border: 1px solid #dee2e6;
+}
+.savings-table th {
+    background-color: #f1f1f1;
+}

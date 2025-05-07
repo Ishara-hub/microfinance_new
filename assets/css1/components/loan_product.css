@@ -1,0 +1,39 @@
+.status-badge {
+    font-size: 0.8rem;
+    padding: 0.35em 0.65em;
+}
+.container.py-4 {
+    padding-top: 3rem !important;
+}
+.action-btns .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    margin: 0 2px;
+}
+.calculation-card {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid #0d6efd;
+}
+.form-label.required:after {
+    content: " *";
+    color: red;
+}
+.table-responsive {
+    overflow-x: auto;
+}
+.badge-active {
+    background-color: #28a745;
+}
+.badge-inactive {
+    background-color: #6c757d;
+}
+.card {
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+}

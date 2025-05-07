@@ -1,0 +1,27 @@
+
+/* Dashboard Styles */
+.dashboard-header {
+    background-color: #343a40;
+    color: white;
+    padding: 15px;
+}
+.card-stat {
+    border-radius: 10px;
+    padding: 20px;
+    color: white;
+    margin-bottom: 20px;
+}
+.card-stat.total {
+    background-color: #007bff;
+}
+.card-stat.loans {
+    background-color: #28a745;
+}
+.card-stat.savings {
+    background-color: #ffc107;
+}
+.sidebar {
+    background-color: #343a40;
+    color: white;
+    height: 100vh;
+}

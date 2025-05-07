@@ -1,0 +1,137 @@
+/* ====================
+   VEHICLE FORM STYLES
+   ==================== */
+
+/* Container & Layout */
+.container {
+    max-width: 1000px;
+    padding: 1rem;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin-top: 2rem;
+    margin-bottom: 3rem;
+}
+
+/* Form Header */
+h4 {
+    color: #2b2d42;
+    font-weight: 600;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #4361ee;
+    display: flex;
+    align-items: center;
+}
+
+h4 i {
+    margin-right: 10px;
+    color: #4361ee;
+}
+
+/* Form Elements */
+.form-label {
+    font-weight: 500;
+    color: #4a5568;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.form-label span.text-danger {
+    color: #e63946;
+}
+
+.form-control {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    box-shadow: none;
+}
+
+.form-control:focus {
+    border-color: #4361ee;
+    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+}
+
+select.form-control {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%234a5568' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 16px 12px;
+    padding-right: 2.5rem;
+}
+
+/* Submit Button */
+.btn-success {
+    background: linear-gradient(135deg, #38b000 0%, #2d7d0d 100%);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-success i {
+    margin-right: 8px;
+}
+
+/* Alerts */
+.alert {
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    border: none;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #38b000 0%, #2d7d0d 100%);
+    color: white;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #e63946 0%, #d00000 100%);
+    color: white;
+}
+
+/* Form Grid Layout */
+.row {
+    margin-bottom: 1rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 1.5rem;
+        margin-top: 1rem;
+    }
+    
+    .col-md-6 {
+        margin-bottom: 1rem;
+    }
+    
+    h3 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Input Validation States */
+.is-invalid {
+    border-color: #e63946 !important;
+}
+
+.is-valid {
+    border-color: #38b000 !important;
+}
+
+.invalid-feedback {
+    color: #e63946;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}

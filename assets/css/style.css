@@ -1,0 +1,23 @@
+
+/* Global Styles */
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+a {
+    color: #007bff;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+button {
+    border-radius: 5px;
+    padding: 6px 12px;
+}
+.container {
+    padding: 20px;
+}

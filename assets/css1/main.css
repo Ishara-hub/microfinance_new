@@ -1,0 +1,42 @@
+/* Base Styles & Variables */
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2c3e50;
+    --success-color: #2ecc71;
+    --danger-color: #e74c3c;
+    --warning-color: #f39c12;
+    --info-color: #1abc9c;
+    --light-color: #ecf0f1;
+    --dark-color: #2c3e50;
+    --sidebar-width: 230px;
+    --top-nav-height: 60px;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+    line-height: 1.6;
+    padding-left: var(--sidebar-width);
+    transition: all 0.3s ease;
+}
+
+/* Layout Structure */
+.main-content {
+    margin-top: var(--top-nav-height);
+    padding: 20px;
+    min-height: calc(100vh - var(--top-nav-height));
+}
+
+.container-fluid {
+
+    padding-right: 5px;
+    padding-left: 5px;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 992px) {
+    body {
+        padding-left: 0;
+    }
+}

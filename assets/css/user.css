@@ -1,0 +1,19 @@
+
+/* User Management Styles */
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.user-table th, .user-table td {
+    padding: 10px;
+    border: 1px solid #dee2e6;
+}
+.user-table th {
+    background-color: #e9ecef;
+}
+.profile-card {
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #ffffff;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+}

@@ -1,0 +1,111 @@
+body {
+    padding-left: 220px; /* Adjust based on sidebar width */
+    transition: all 0.3s;
+}
+/* Additional styles for dropdown functionality */
+.sidebar-dropdown {
+    display: none;
+    padding-left: 20px;
+    background-color: rgba(0,0,0,0.05);
+}
+
+.sidebar-dropdown a {
+    display: block;
+    padding: 10px 15px;
+    color: #333;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.sidebar-dropdown a:hover {
+    background-color: rgba(0,0,0,0.1);
+}
+
+.sidebar-dropdown a.active {
+    background-color: rgba(0,0,0,0.1);
+    font-weight: bold;
+}
+
+.has-dropdown {
+    position: relative;
+}
+
+.has-dropdown::after {
+    content: '\f078';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    right: 15px;
+    top: 12px;
+    font-size: 12px;
+    transition: transform 0.3s;
+}
+
+.has-dropdown.open::after {
+    transform: rotate(180deg);
+}
+
+.sidebar-menu a {
+    position: relative;
+}
+.sidebar {
+    width: 220px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background: linear-gradient(180deg, #2b2d42 0%, #1a1a2e 100%);
+    color: white;
+    padding-top: 20px;
+    transition: all 0.3s;
+    z-index: 1000;
+}
+
+.sidebar-header {
+    padding: 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 20px;
+}
+.sidebar nav {
+    list-style: none;
+    padding: 0.5rem 0;
+    margin: 0;
+}
+
+.sidebar a {
+    color: #adb5bd;
+    padding: 10px 20px;
+    display: block;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.sidebar a:hover, .sidebar a.active {
+    color: white;
+    background: #495057;
+}
+
+.sidebar a i {
+    margin-right: 10px;
+}
+
+.summary-card { transition: transform 0.2s; }
+.summary-card:hover { transform: scale(1.02); }
+.chart-container { height: 300px; }
+
+@media (max-width: 768px) {
+    body {
+        padding-left: 0;
+    }
+    
+    .sidebar {
+        left: -250px;
+    }
+    
+    .sidebar.active {
+        left: 0;
+    }
+}
+.summary-card { transition: transform 0.2s; }
+.summary-card:hover { transform: scale(1.02); }
+.chart-container { height: 300px; }

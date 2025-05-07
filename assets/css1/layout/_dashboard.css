@@ -1,0 +1,85 @@
+.summary-card {
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  height: 100%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.summary-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.summary-card .card-body {
+  padding: 20px;
+}
+
+.summary-card h5 {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 10px;
+  opacity: 0.9;
+}
+
+.summary-card h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Color variants */
+.summary-card.bg-primary {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.summary-card.bg-success {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+}
+
+.summary-card.bg-warning {
+  background: linear-gradient(135deg, #f39c12, #e67e22);
+}
+
+.summary-card.bg-danger {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+/* Chart containers */
+.chart-container {
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.chart-container .card-body {
+  padding: 20px;
+  height: 300px;
+}
+
+/* Quick actions */
+.quick-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 20px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  color: white;
+  font-weight: 500;
+}
+
+.quick-action-btn i {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.quick-action-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}

@@ -1,0 +1,89 @@
+/* ====================
+   GLOBAL STYLES
+   ==================== */
+   body {
+    padding-left: 220px;
+    transition: all 0.3s;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 9px;
+    line-height: 1.6;
+    color: #333;
+}
+
+/* ====================
+   SIDEBAR STYLES
+   ==================== */
+.sidebar {
+    width: 220px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background: rgb(32, 47, 62);
+    color: white;
+    padding-top: 20px;
+    transition: all 0.3s;
+    z-index: 1000;
+}
+
+.sidebar-header {
+    padding: 10px 20px;
+    border-bottom: 1px solid #4b545c;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+}
+
+.sidebar a {
+    color: #adb5bd;
+    padding: 10px 20px;
+    display: block;
+    text-decoration: none;
+    transition: all 0.3s;
+    font-size: 0.8rem;
+}
+
+.sidebar a:hover, 
+.sidebar a.active {
+    color: white;
+    background: #495057;
+}
+
+.sidebar a i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+/* ====================
+   RESPONSIVE STYLES
+   ==================== */
+@media (max-width: 768px) {
+    body {
+        padding-left: 0;
+    }
+    
+    .sidebar {
+        left: -250px;
+    }
+    
+    .sidebar.active {
+        left: 0;
+    }
+}
+
+/* ====================
+   UTILITY CLASSES
+   ==================== */
+.container-fluid.py-4 {
+    padding-top: 2.5rem !important;
+}
+
+#sidebarToggle {
+    display: none; /* Hidden by default, shown only on mobile */
+}
+
+@media (max-width: 768px) {
+    #sidebarToggle {
+        display: inline-block;
+    }
+}
