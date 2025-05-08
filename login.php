@@ -18,7 +18,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (password_verify($password, $user['password'])) {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_role'] = $user['role'];
-            header("Location: dashboard.php");
+            header("Location: dash_board_new.php");
             exit();
         } else {
             echo "<p style='color: red;'>❌ Invalid password!</p>";
