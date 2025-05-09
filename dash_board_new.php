@@ -99,9 +99,21 @@ include 'header.php';
                     <div class="card-body text-center">
                         <div class="row">
                             <div class="col-md-3 mb-3">
-                                <a href="loan_applications.php" class="btn btn-primary btn-lg w-100 py-3">
+                                <a href="loan_appl.php" class="btn btn-primary btn-lg w-100 py-3">
                                     <i class="fas fa-hand-holding-usd fa-2x"></i><br>
-                                    New Loan
+                                    New Business Loan
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <a href="micro_loan_application.php" class="btn btn-warning btn-lg w-100 py-3">
+                                    <i class="fas fa-hand-holding-usd fa-2x"></i><br>
+                                    New Micro Loan
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <a href="leasing.php" class="btn btn-danger btn-lg w-100 py-3">
+                                    <i class="fas fa-hand-holding-usd fa-2x"></i><br>
+                                    New Lease Loan
                                 </a>
                             </div>
                             <div class="col-md-3 mb-3">
@@ -117,9 +129,9 @@ include 'header.php';
                                 </a>
                             </div>
                             <div class="col-md-3 mb-3">
-                                <a href="loan_products.php" class="btn btn-info btn-lg w-100 py-3">
+                                <a href="product.php" class="btn btn-info btn-lg w-100 py-3">
                                     <i class="fas fa-user-plus fa-2x"></i><br>
-                                    Manage Loan Products
+                                    Loan Products
                                 </a>
                             </div>
                             <div class="col-md-3 mb-3">

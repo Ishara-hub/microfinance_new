@@ -244,6 +244,10 @@ if (isset($_SESSION['user_id'])) {
                         <i class="fas fa-file-contract"></i>
                         <span>New Branch</span>
                     </a>
+                    <a href="early_settlement.php" class="<?= basename($_SERVER['PHP_SELF']) == 'early_settlement.php' ? 'active' : '' ?>">
+                        <i class="fas fa-file-contract"></i>
+                        <span>Early Settlement</span>
+                    </a>
                     <a href="new_user.php" class="<?= basename($_SERVER['PHP_SELF']) == 'new_user.php' ? 'active' : '' ?>">
                         <i class="fas fa-check-square"></i>
                         <span>User Management</span>
