@@ -1,44 +1,79 @@
 <?php
-ob_start(); // Start output buffering at the VERY FIRST LINE
+ob_start();
 include "db.php";
 session_start();
 
-// Set page title
 $page_title = "Business Loan Approvals";
-
-// Include header
 include 'header.php';
 
 if (!$conn) {
     die("Database connection failed: " . mysqli_connect_error());
 }
 
-// Handle Loan Approval
+// Handle Loan Approval (First Step)
 if (isset($_POST['approve'])) {
-    $loan_id = $_POST['loan_id']; // Changed from intval() since ID is now VARCHAR
+    $loan_id = $_POST['loan_id'];
+
+    $updateQuery = "UPDATE loan_applications SET status = 'approved' WHERE id = ?";
+    $updateStmt = $conn->prepare($updateQuery);
+    $updateStmt->bind_param("s", $loan_id);
+    
+    if ($updateStmt->execute()) {
+        $message = "Loan $loan_id has been approved (pending disbursement)";
+        $link = "loan_details.php?id=$loan_id";
+        $notificationQuery = "INSERT INTO notifications (user_id, message, link) VALUES (?, ?, ?)";
+        $notificationStmt = $conn->prepare($notificationQuery);
+        $notificationStmt->bind_param("iss", $_SESSION['user_id'], $message, $link);
+        $notificationStmt->execute();
+
+        $_SESSION['approval_message'] = "Loan $loan_id approved successfully! Waiting for disbursement.";
+        ob_end_clean();
+        header("Location: loan_approval1.php");
+        exit();
+    }
+}
+
+// Handle Loan Disbursement (Second Step)
+if (isset($_POST['disburse'])) {
+    $loan_id = $_POST['loan_id'];
+    $disburse_date = $_POST['disburse_date'];
+    $first_installment_date = $_POST['first_installment_date'];
+
+    // Validate dates
+    if (empty($disburse_date) || empty($first_installment_date)) {
+        $_SESSION['error_message'] = "Please select both disbursement date and first installment date";
+        header("Location: loan_approval1.php");
+        exit();
+    }
+
+    // Check if first installment date is after disbursement date
+    if (strtotime($first_installment_date) <= strtotime($disburse_date)) {
+        $_SESSION['error_message'] = "First installment date must be after disbursement date";
+        header("Location: loan_approval1.php");
+        exit();
+    }
 
     // Fetch loan application details
-    $loanQuery = "SELECT * FROM loan_applications WHERE id = ?";
+    $loanQuery = "SELECT * FROM loan_applications WHERE id = ? AND status = 'approved'";
     $loanStmt = $conn->prepare($loanQuery);
-    $loanStmt->bind_param("s", $loan_id); // Changed from "i" to "s" for string
+    $loanStmt->bind_param("s", $loan_id);
     $loanStmt->execute();
     $loanResult = $loanStmt->get_result();
 
     if ($loanResult->num_rows > 0) {
         $loanData = $loanResult->fetch_assoc();
 
-        // Update loan status to 'approved'
-        $updateQuery = "UPDATE loan_applications SET status = 'approved' WHERE id = ?";
+        // Update loan status to 'disbursed' and set dates
+        $updateQuery = "UPDATE loan_applications SET status = 'disbursed', disburse_date = ?, first_installment_date = ? WHERE id = ?";
         $updateStmt = $conn->prepare($updateQuery);
-        $updateStmt->bind_param("s", $loan_id); // Changed from "i" to "s"
+        $updateStmt->bind_param("sss", $disburse_date, $first_installment_date, $loan_id);
         $updateStmt->execute();
 
-        // Generate installment schedule
+        // Generate installment schedule based on first installment date
         $loan_amount = $loanData['loan_amount'];
         $installments = $loanData['installments'];
         $rental_value = $loanData['rental_value'];
         $loan_product_id = $loanData['loan_product_id'];
-        $disburse_date = date("Y-m-d");
 
         // Get repayment method and interest type
         $productQuery = "SELECT repayment_method, interest_rate, interest_type FROM loan_products WHERE id = ?";
@@ -52,7 +87,7 @@ if (isset($_POST['approve'])) {
         $interest_type = $productData['interest_type'];
 
         // Insert installments into loan_details table
-        $due_date = $disburse_date;
+        $due_date = $first_installment_date;
         $outstanding_loan = $loan_amount;
 
         // Calculate total interest and rental value
@@ -60,13 +95,16 @@ if (isset($_POST['approve'])) {
         $rental_value = ($loan_amount + $total_interest) / $installments;
 
         for ($i = 0; $i < $installments; $i++) {
-            // Calculate due date based on repayment method
-            if ($repayment_method == "daily") {
-                $due_date = date("Y-m-d", strtotime($due_date . " +1 day"));
-            } elseif ($repayment_method == "weekly") {
-                $due_date = date("Y-m-d", strtotime($due_date . " +1 week"));
-            } elseif ($repayment_method == "monthly") {
-                $due_date = date("Y-m-d", strtotime($due_date . " +1 month"));
+            // For first installment, use the specified date
+            // For subsequent installments, calculate based on repayment method
+            if ($i > 0) {
+                if ($repayment_method == "daily") {
+                    $due_date = date("Y-m-d", strtotime($due_date . " +1 day"));
+                } elseif ($repayment_method == "weekly") {
+                    $due_date = date("Y-m-d", strtotime($due_date . " +1 week"));
+                } elseif ($repayment_method == "monthly") {
+                    $due_date = date("Y-m-d", strtotime($due_date . " +1 month"));
+                }
             }
 
             // Calculate interest due and capital due
@@ -93,51 +131,50 @@ if (isset($_POST['approve'])) {
         }
 
         // Create notification
-        $message = "Loan $loan_id has been approved"; // Changed from # to just display ID
+        $message = "Loan $loan_id has been disbursed with first installment on $first_installment_date";
         $link = "loan_details.php?id=$loan_id";
         $notificationQuery = "INSERT INTO notifications (user_id, message, link) VALUES (?, ?, ?)";
         $notificationStmt = $conn->prepare($notificationQuery);
         $notificationStmt->bind_param("iss", $_SESSION['user_id'], $message, $link);
         $notificationStmt->execute();
 
-        // Set session variable for success message
-        $_SESSION['approval_message'] = "Loan $loan_id approved successfully!"; // Removed #
-        
-        // Replace all header() redirects with this pattern:
-        if ($updateStmt->execute()) {
-            ob_end_clean(); // Clean the buffer before redirect
-            header("Location: loan_approval1.php");
-            exit();
-        }
+        $_SESSION['approval_message'] = "Loan $loan_id disbursed successfully! Installment schedule generated starting from $first_installment_date.";
+        ob_end_clean();
+        header("Location: loan_approval1.php");
+        exit();
+    } else {
+        $_SESSION['error_message'] = "Loan not found or not in approved status";
+        header("Location: loan_approval1.php");
+        exit();
     }
 }
 
 // Handle Loan Rejection
 if (isset($_POST['reject'])) {
-    $loan_id = $_POST['loan_id']; // Changed from intval()
+    $loan_id = $_POST['loan_id'];
 
-    // Update loan status to 'rejected'
     $updateQuery = "UPDATE loan_applications SET status = 'rejected' WHERE id = ?";
     $updateStmt = $conn->prepare($updateQuery);
-    $updateStmt->bind_param("s", $loan_id); // Changed from "i" to "s"
+    $updateStmt->bind_param("s", $loan_id);
     $updateStmt->execute();
 
-    // Create notification
-    $message = "Loan $loan_id has been rejected"; // Changed from #
+    $message = "Loan $loan_id has been rejected";
     $link = "loan_details.php?id=$loan_id";
     $notificationQuery = "INSERT INTO notifications (user_id, message, link) VALUES (?, ?, ?)";
     $notificationStmt = $conn->prepare($notificationQuery);
     $notificationStmt->bind_param("iss", $_SESSION['user_id'], $message, $link);
     $notificationStmt->execute();
 
-    $_SESSION['approval_message'] = "Loan $loan_id rejected successfully!"; // Removed #
-    header("Location: loan_approval.php");
+    $_SESSION['approval_message'] = "Loan $loan_id rejected successfully!";
+    ob_end_clean();
+    header("Location: loan_approval1.php");
     exit();
 }
 
 // Fetch all loan applications
 $result = $conn->query("SELECT loan_applications.id, members.full_name, loan_products.name, loan_applications.loan_amount, 
-                        loan_applications.installments, loan_applications.status, loan_applications.created_at 
+                        loan_applications.installments, loan_applications.status, loan_applications.created_at, 
+                        loan_applications.disburse_date, loan_applications.first_installment_date
                         FROM loan_applications 
                         JOIN members ON loan_applications.member_id = members.id 
                         JOIN loan_products ON loan_applications.loan_product_id = loan_products.id
@@ -145,11 +182,12 @@ $result = $conn->query("SELECT loan_applications.id, members.full_name, loan_pro
                             CASE 
                                 WHEN loan_applications.status = 'Pending' THEN 1
                                 WHEN loan_applications.status = 'Approved' THEN 2
-                                ELSE 3
+                                WHEN loan_applications.status = 'Disbursed' THEN 3
+                                ELSE 4
                             END,
-                            loan_applications.created_at  DESC");
+                            loan_applications.created_at DESC");
 ?>
-
+'Pending','Approved','Rejected','Settled','Disbursed'
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -159,6 +197,7 @@ $result = $conn->query("SELECT loan_applications.id, members.full_name, loan_pro
     <style>
         .status-pending { color: #ffc107; font-weight: bold; }
         .status-approved { color: #28a745; font-weight: bold; }
+        .status-disbursed { color: #17a2b8; font-weight: bold; }
         .status-rejected { color: #dc3545; font-weight: bold; }
         .auto-reload {
             position: fixed;
@@ -169,6 +208,22 @@ $result = $conn->query("SELECT loan_applications.id, members.full_name, loan_pro
         .loan-id {
             font-family: monospace;
             font-weight: bold;
+        }
+        .disburse-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .disburse-form .form-group {
+            margin-bottom: 0;
+        }
+        .disburse-form input[type="date"] {
+            max-width: 150px;
+        }
+        .date-label {
+            font-size: 0.8rem;
+            margin-bottom: 0.2rem;
         }
     </style>
 </head>
@@ -203,8 +258,8 @@ $result = $conn->query("SELECT loan_applications.id, members.full_name, loan_pro
                                 <th>Loan Product</th>
                                 <th>Amount</th>
                                 <th>Installments</th>
-                                <th>Created At</th>
                                 <th>Status</th>
+                                <th>Disburse Date</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -216,9 +271,11 @@ $result = $conn->query("SELECT loan_applications.id, members.full_name, loan_pro
                                     <td><?= htmlspecialchars($row['name']); ?></td>
                                     <td><?= number_format($row['loan_amount'], 2); ?></td>
                                     <td><?= $row['installments']; ?> <?= $row['installments'] == 1 ? 'Month' : 'Months'; ?></td>
-                                    <td><?= date('Y-m-d H:i', strtotime($row['created_at'])); ?></td>
                                     <td class="status-<?= strtolower($row['status']) ?>">
                                         <?= ucfirst($row['status']); ?>
+                                    </td>
+                                    <td>
+                                        <?= $row['disburse_date'] ? date('Y-m-d', strtotime($row['disburse_date'])) : 'N/A'; ?>
                                     </td>
                                     <td>
                                         <?php if ($row['status'] == 'Pending') { ?>
@@ -231,14 +288,30 @@ $result = $conn->query("SELECT loan_applications.id, members.full_name, loan_pro
                                                     <i class="fas fa-times-circle me-1"></i> Reject
                                                 </button>
                                             </form>
-                                            <a href="loan_details.php?id=<?= htmlspecialchars($row['id']) ?>" class="btn btn-info btn-sm ms-1">
-                                                <i class="fas fa-eye me-1"></i> View
-                                            </a>
-                                        <?php } else { ?>
-                                            <a href="loan_details.php?id=<?= htmlspecialchars($row['id']) ?>" class="btn btn-info btn-sm">
-                                                <i class="fas fa-eye me-1"></i> View Details
-                                            </a>
+                                        <?php } elseif ($row['status'] == 'Approved') { ?>
+                                            <form method="POST" class="disburse-form">
+                                                <input type="hidden" name="loan_id" value="<?= htmlspecialchars($row['id']); ?>">
+                                                
+                                                <div class="form-group">
+                                                    <div class="date-label">Disburse Date</div>
+                                                    <input type="date" name="disburse_date" class="form-control form-control-sm" 
+                                                           value="<?= date('Y-m-d') ?>" min="<?= date('Y-m-d', strtotime($row['created_at'])) ?>">
+                                                </div>
+                                                
+                                                <div class="form-group">
+                                                    <div class="date-label">1st Installment</div>
+                                                    <input type="date" name="first_installment_date" class="form-control form-control-sm" 
+                                                           value="<?= date('Y-m-d', strtotime('+3 days')) ?>">
+                                                </div>
+                                                
+                                                <button type="submit" name="disburse" class="btn btn-primary btn-sm align-self-end">
+                                                    <i class="fas fa-money-bill-wave me-1"></i> Disburse
+                                                </button>
+                                            </form>
                                         <?php } ?>
+                                        <a href="loan_details.php?id=<?= htmlspecialchars($row['id']) ?>" class="btn btn-info btn-sm <?= $row['status'] == 'Approved' ? 'mt-2' : '' ?>">
+                                            <i class="fas fa-eye me-1"></i> View
+                                        </a>
                                     </td>
                                 </tr>
                             <?php } ?>
@@ -272,7 +345,7 @@ $result = $conn->query("SELECT loan_applications.id, members.full_name, loan_pro
                     $(this).html('<i class="fas fa-sync-alt fa-spin"></i> Auto Refresh ON');
                     reloadInterval = setInterval(function() {
                         location.reload();
-                    }, 30000); // Reload every 30 seconds
+                    }, 30000);
                 } else {
                     $(this).addClass('btn-primary').removeClass('btn-success');
                     $(this).html('<i class="fas fa-sync-alt"></i> Auto Refresh');
@@ -280,25 +353,33 @@ $result = $conn->query("SELECT loan_applications.id, members.full_name, loan_pro
                 }
             });
 
-            // Check for new loan applications periodically (without page reload)
+            // Set first installment date to 3 days after disbursement date by default
+            $('input[name="disburse_date"]').change(function() {
+                var disburseDate = new Date($(this).val());
+                if (!isNaN(disburseDate.getTime())) {
+                    disburseDate.setDate(disburseDate.getDate() + 3);
+                    var formattedDate = disburseDate.toISOString().split('T')[0];
+                    $('input[name="first_installment_date"]').val(formattedDate);
+                }
+            });
+
+            // Check for new loan applications periodically
             function checkNewApplications() {
                 $.ajax({
                     url: 'check_new_applications.php',
                     method: 'GET',
                     success: function(response) {
                         if (response.count > 0) {
-                            // Show notification
                             showNewApplicationNotification(response.count);
                         }
                     },
                     complete: function() {
-                        setTimeout(checkNewApplications, 60000); // Check every minute
+                        setTimeout(checkNewApplications, 60000);
                     }
                 });
             }
 
             function showNewApplicationNotification(count) {
-                // Create or update notification badge
                 let notificationBadge = $('#newLoanBadge');
                 if (notificationBadge.length === 0) {
                     $('h2').append(` <span class="badge bg-danger" id="newLoanBadge">${count} New</span>`);
@@ -306,7 +387,6 @@ $result = $conn->query("SELECT loan_applications.id, members.full_name, loan_pro
                     notificationBadge.text(`${count} New`);
                 }
                 
-                // Show toast notification
                 const toast = $(`
                     <div class="toast show position-fixed bottom-0 end-0 m-3" style="z-index: 9999">
                         <div class="toast-header bg-primary text-white">
@@ -322,19 +402,16 @@ $result = $conn->query("SELECT loan_applications.id, members.full_name, loan_pro
                 
                 $('body').append(toast);
                 
-                // Auto-remove after 5 seconds
                 setTimeout(function() {
                     toast.remove();
                 }, 5000);
             }
 
-            // Start checking for new applications
             checkNewApplications();
         });
     </script>
 </body>
 </html>
 <?php
-// Include footer
 include 'footer.php';
 ?>

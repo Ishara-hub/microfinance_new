@@ -348,6 +348,7 @@ if (empty($loanData)) {
         }
         .status-pending { background-color: #fff3cd; color: #856404; }
         .status-approved { background-color: #d4edda; color: #155724; }
+        .status-Disbursed { background-color: #d4edda; color: #6f42c1; }
         .status-rejected { background-color: #f8d7da; color: #721c24; }
         .summary-card {
             border-left: 4px solid;
@@ -528,7 +529,6 @@ if (empty($loanData)) {
                                     <dt class="col-sm-4">Contact:</dt>
                                     <dd class="col-sm-8">
                                         <i class="fas fa-phone me-1"></i> <?= htmlspecialchars($loanData['phone']) ?><br>
-                                        <i class="fas fa-envelope me-1"></i> <?= htmlspecialchars($loanData['initials']) ?>
                                     </dd>
 
                                     <dt class="col-sm-4">Address:</dt>
@@ -610,6 +610,7 @@ if (empty($loanData)) {
                                             <th>Principal</th>
                                             <th>Interest</th>
                                             <th>Total Due</th>
+                                            <th>Paid Amount</th>
                                             <th>Status</th>
                                             <th>Payment Date</th>
                                         </tr>
@@ -630,6 +631,7 @@ if (empty($loanData)) {
                                                 <td><?= number_format($installment['capital_due'], 2) ?></td>
                                                 <td><?= number_format($installment['interest_due'], 2) ?></td>
                                                 <td><?= number_format($installment['total_due'], 2) ?></td>
+                                                <td><?= number_format($installment['paid_amount'], 2) ?></td>
                                                 <td>
                                                     <?php if ($installment['status'] == 'paid'): ?>
                                                         <span class="badge bg-success">Paid</span>
@@ -640,7 +642,7 @@ if (empty($loanData)) {
                                                     <?php endif; ?>
                                                 </td>
                                                 <td>
-                                                    <?= $installment['status'] == 'paid' ? date('M d, Y', strtotime($installment['payment_date'])) : '--' ?>
+                                                    <?= $installment['status'] == 'paid' ? date('M d, Y', strtotime($installment['paid_date'])) : '--' ?>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
@@ -684,7 +686,6 @@ if (empty($loanData)) {
                                             <th>Principal</th>
                                             <th>Interest</th>
                                             <th>Installment</th>
-                                            <th>Method</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -696,8 +697,6 @@ if (empty($loanData)) {
                                                 <td><?= number_format($payment['capital_paid'], 2) ?></td>
                                                 <td><?= number_format($payment['interest_paid'], 2) ?></td>
                                                 <td>#<?= $payment['installment_id'] ?></td>
-                                                <td><?= ucfirst($payment['payment_method']) ?></td>
-                                            </tr>
                                         <?php endforeach; ?>
                                     </tbody>
                                 </table>
@@ -794,6 +793,9 @@ if (empty($loanData)) {
 
                                     <dt class="col-sm-4">Mobile:</dt>
                                     <dd class="col-sm-8"><?= htmlspecialchars($loanData['guarantor1_mobile']) ?></dd>
+
+                                    <dt class="col-sm-4">Address:</dt>
+                                    <dd class="col-sm-8"><?= htmlspecialchars($loanData['guarantor1_address']) ?></dd>
                                 </dl>
                             </div>
                         </div>
@@ -816,6 +818,9 @@ if (empty($loanData)) {
 
                                     <dt class="col-sm-4">Mobile:</dt>
                                     <dd class="col-sm-8"><?= htmlspecialchars($loanData['guarantor2_mobile']) ?></dd>
+
+                                    <dt class="col-sm-4">Address:</dt>
+                                    <dd class="col-sm-8"><?= htmlspecialchars($loanData['guarantor2_address']) ?></dd>
                                 </dl>
                             </div>
                         </div>

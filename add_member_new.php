@@ -10,8 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $address = htmlspecialchars(trim($_POST['address']));
     $dob = $_POST['dob'];
     $gender = htmlspecialchars(trim($_POST['gender']));
-    $title = htmlspecialchars(trim($_POST['title']));
-    $civil_status = htmlspecialchars(trim($_POST['civil_status']));
+    $status = htmlspecialchars(trim($_POST['status']));
 
     // 🔹 Validation Checks
     $errors = [];
@@ -53,10 +52,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // 🔹 If no errors, proceed with database insertion
     if (empty($errors)) {
-        $query = "INSERT INTO members (full_name, initials, nic, phone, address, dob, gender, title, civil_status) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO members (full_name, initials, nic, phone, address, dob, gender, status) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($query);
-        $stmt->bind_param("sssssssss", $full_name, $initials, $nic, $phone, $address, $dob, $gender, $title, $civil_status);
+        $stmt->bind_param("ssssssss", $full_name, $initials, $nic, $phone, $address, $dob, $gender, $status);
 
         if ($stmt->execute()) {
             echo "<script>alert('✅ Member Added Successfully!'); window.location.href='members.php';</script>";

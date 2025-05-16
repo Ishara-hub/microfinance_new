@@ -41,7 +41,7 @@ include 'header.php';
                                 </li>
                                 <li class="list-group-item">
                                     <a href="delinquency_report.php" class="text-decoration-none">
-                                        <i class="fas fa-exclamation-triangle me-2"></i> Delinquency Report
+                                        <i class="fas fa-exclamation-triangle me-2"></i> Arrears Report
                                     </a>
                                 </li>
                             </ul>

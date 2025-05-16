@@ -16,11 +16,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $guarantor1_name = $_POST['guarantor1_name'];
     $guarantor1_nic = $_POST['guarantor1_nic'];
     $guarantor1_mobile = $_POST['guarantor1_mobile'];
+    $guarantor1_address = $_POST['guarantor1_address'];
+
 
     // Guarantor 2 Details
     $guarantor2_name = $_POST['guarantor2_name'];
     $guarantor2_nic = $_POST['guarantor2_nic'];
     $guarantor2_mobile = $_POST['guarantor2_mobile'];
+    $guarantor2_address = $_POST['guarantor2_address'];
 
     $loan_product_id = $_POST['loan_product_id'];
     $loan_amount = $_POST['loan_amount'];
@@ -47,15 +50,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Prepare SQL statement with the generated ID
     $query = "INSERT INTO loan_applications (id, branch, credit_officer, member_id, 
-              guarantor1_name, guarantor1_nic, guarantor1_mobile, 
-              guarantor2_name, guarantor2_nic, guarantor2_mobile, 
+              guarantor1_name, guarantor1_nic, guarantor1_mobile, guarantor1_address, 
+              guarantor2_name, guarantor2_nic, guarantor2_mobile, guarantor2_address,
               loan_product_id, loan_amount, installments, interest_rate, rental_value, status) 
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("siiisssssssiddds", $loan_id, $branch, $credit_officer, $member_id, 
-                      $guarantor1_name, $guarantor1_nic, $guarantor1_mobile, 
-                      $guarantor2_name, $guarantor2_nic, $guarantor2_mobile, 
+    $stmt->bind_param("siiisssssssssiddds", $loan_id, $branch, $credit_officer, $member_id, 
+                      $guarantor1_name, $guarantor1_nic, $guarantor1_mobile, $guarantor1_address,
+                      $guarantor2_name, $guarantor2_nic, $guarantor2_mobile, $guarantor2_address,
                       $loan_product_id, $loan_amount, $installments, 
                       $interest_rate, $rental_value, $status);
     
@@ -149,6 +152,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                         <label class="form-label">Mobile Number</label>
                                         <input type="text" name="guarantor1_mobile" class="form-control" placeholder="Enter mobile" required>
                                     </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Address</label>
+                                        <input type="text" name="guarantor1_address" class="form-control" placeholder="Enter address" required>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -169,6 +176,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <div class="mb-3">
                                         <label class="form-label">Mobile Number</label>
                                         <input type="text" name="guarantor2_mobile" class="form-control" placeholder="Enter mobile" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Address</label>
+                                        <input type="text" name="guarantor2_address" class="form-control" placeholder="Enter address" required>
                                     </div>
                                 </div>
                             </div>

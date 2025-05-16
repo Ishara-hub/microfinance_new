@@ -12,6 +12,7 @@ $loan_type = $_GET['loan_type'] ?? '';
 $status = $_GET['status'] ?? '';
 $date_from = $_GET['date_from'] ?? '';
 $date_to = $_GET['date_to'] ?? '';
+$repayment_method = $_GET['repayment_method'] ?? '';
 
 // Build base queries for each loan type
 $query_bl = "SELECT 
@@ -22,10 +23,11 @@ $query_bl = "SELECT
             b.name AS branch_name,
             lp.name AS product_name,
             la.loan_amount,
-            la.interest_rate,
+            la.interest_rate,   
             la.installments,
             la.rental_value,
             la.status,
+            lp.repayment_method,
             (SELECT COUNT(*) FROM payments WHERE loan_id = la.id) AS payments_made,
             (la.loan_amount + (la.loan_amount * la.interest_rate / 100)) - 
             (SELECT IFNULL(SUM(amount), 0) FROM payments WHERE loan_id = la.id) AS outstanding_balance
@@ -47,6 +49,7 @@ $query_ml = "SELECT
             mla.installments,
             mla.rental_value,
             mla.status,
+            lp.repayment_method,
             (SELECT COUNT(*) FROM micro_loan_payments WHERE loan_id = mla.id) AS payments_made,
             (mla.loan_amount + (mla.loan_amount * mla.interest_rate / 100)) - 
             (SELECT IFNULL(SUM(amount), 0) FROM micro_loan_payments WHERE loan_id = mla.id) AS outstanding_balance
@@ -68,6 +71,7 @@ $query_ll = "SELECT
             ll.installments,
             ll.rental_value,
             ll.status,
+            lp.repayment_method,
             (SELECT COUNT(*) FROM lease_loan_payments WHERE loan_id = ll.id) AS payments_made,
             (ll.loan_amount + (ll.loan_amount * ll.interest_rate / 100)) - 
             (SELECT IFNULL(SUM(amount), 0) FROM lease_loan_payments WHERE loan_id = ll.id) AS outstanding_balance
@@ -92,7 +96,14 @@ if (!empty($branch_id)) {
     $params[] = $branch_id;
     $types .= 'i';
 }
-
+// For Business Loans (BL)
+if (!empty($repayment_method)) {
+    $conditions_bl[] = "lp.repayment_method = ?";
+    $conditions_ml[] = "lp.repayment_method = ?";
+    $conditions_ll[] = "lp.repayment_method = ?";
+    $params[] = $repayment_method;
+    $types .= 's';
+}
 if (!empty($status)) {
     $conditions_bl[] = "la.status = ?";
     $conditions_ml[] = "mla.status = ?";
@@ -238,6 +249,15 @@ $avg_interest = $total_loans > 0 ? $total_interest / $total_loans : 0;
                         </select>
                     </div>
                     <div class="col-md-3">
+                        <label class="form-label">Repayment Method</label>
+                        <select name="repayment_method" class="form-select">
+                            <option value="">All Methods</option>
+                            <option value="daily" <?= $repayment_method == 'daily' ? 'selected' : '' ?>>Daily</option>
+                            <option value="weekly" <?= $repayment_method == 'weekly' ? 'selected' : '' ?>>Weekly</option>
+                            <option value="monthly" <?= $repayment_method == 'monthly' ? 'selected' : '' ?>>Monthly</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label">Status</label>
                         <select name="status" class="form-select">
                             <option value="">All Statuses</option>
@@ -294,6 +314,7 @@ $avg_interest = $total_loans > 0 ? $total_interest / $total_loans : 0;
                             <th>NIC</th>
                             <th>Branch</th>
                             <th>Product</th>
+                            <th>Repayment Method</th>
                             <th>Amount (Rs.)</th>
                             <th>Interest (%)</th>
                             <th>Installments</th>
@@ -326,6 +347,7 @@ $avg_interest = $total_loans > 0 ? $total_interest / $total_loans : 0;
                             <td><?= htmlspecialchars($row['member_nic']) ?></td>
                             <td><?= htmlspecialchars($row['branch_name']) ?></td>
                             <td><?= htmlspecialchars($row['product_name']) ?></td>
+                            <td><?= ucfirst(htmlspecialchars($row['repayment_method'])) ?></td>
                             <td class="text-end"><?= number_format($row['loan_amount'], 2) ?></td>
                             <td class="text-end"><?= number_format($row['interest_rate'], 2) ?></td>
                             <td class="text-center"><?= $row['installments'] ?></td>
@@ -345,7 +367,7 @@ $avg_interest = $total_loans > 0 ? $total_interest / $total_loans : 0;
                     </tbody>
                     <tfoot>
                         <tr class="table-active">
-                            <th colspan="6" class="text-end">Totals:</th>
+                            <th colspan="7" class="text-end">Totals:</th>
                             <th class="text-end"><?= number_format($total_amount, 2) ?></th>
                             <th></th>
                             <th></th>

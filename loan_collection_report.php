@@ -8,8 +8,10 @@ include 'header.php';
 // Get filter parameters
 $branch_id = $_GET['branch_id'] ?? '';
 $loan_type = $_GET['loan_type'] ?? '';
-$date_from = $_GET['date_from'] ?? '';
-$date_to = $_GET['date_to'] ?? '';
+$collected_by = $_GET['collected_by'] ?? '';
+$repayment_method = $_GET['repayment_method'] ?? '';
+$date_from = $_GET['date_from'] ?? date('Y-m-d');
+$date_to = $_GET['date_to'] ?? date('Y-m-d');
 
 // Base query for collections
 $query_bl = "SELECT 
@@ -125,6 +127,23 @@ if (!empty($branch_id)) {
     $conditions_ll[] = "b.id = ?";
     $params[] = $branch_id;
     $types .= 'i';
+}
+// Apply repayment method filter if specified
+if (!empty($repayment_method)) {
+    $conditions_bl[] = "lp.repayment_method = ?";
+    $conditions_ml[] = "lp.repayment_method = ?";
+    $conditions_ll[] = "lp.repayment_method = ?";
+    $params[] = $repayment_method;
+    $types .= 's';
+}
+
+// Apply collected by filter if specified
+if (!empty($collected_by)) {
+    $conditions_bl[] = "u.username = ?";
+    $conditions_ml[] = "u.username = ?";
+    $conditions_ll[] = "u.username = ?";
+    $params[] = $collected_by;
+    $types .= 's';
 }
 
 if (!empty($status)) {
@@ -250,6 +269,29 @@ foreach ($rows as $row) {
                             <option value="BL" <?= $loan_type == 'BL' ? 'selected' : '' ?>>Business Loan</option>
                             <option value="ML" <?= $loan_type == 'ML' ? 'selected' : '' ?>>Micro Loan</option>
                             <option value="LL" <?= $loan_type == 'LL' ? 'selected' : '' ?>>Leasing Loan</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Repayment Method</label>
+                        <select name="repayment_method" class="form-select">
+                            <option value="">All Methods</option>
+                            <option value="daily" <?= $repayment_method == 'daily' ? 'selected' : '' ?>>Daily</option>
+                            <option value="weekly" <?= $repayment_method == 'weekly' ? 'selected' : '' ?>>Weekly</option>
+                            <option value="monthly" <?= $repayment_method == 'monthly' ? 'selected' : '' ?>>Monthly</option>
+                            <option value="bullet" <?= $repayment_method == 'bullet' ? 'selected' : '' ?>>Bullet</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Collected By</label>
+                        <select name="collected_by" class="form-select">
+                            <option value="">All Collectors</option>
+                            <?php
+                            $collectors = $conn->query("SELECT DISTINCT username FROM users WHERE user_type IN ('credit_officer', 'collector')");
+                            while ($collector = $collectors->fetch_assoc()) {
+                                $selected = $collector['username'] == $collected_by ? 'selected' : '';
+                                echo "<option value='{$collector['username']}' $selected>{$collector['username']}</option>";
+                            }
+                            ?>
                         </select>
                     </div>
                     <div class="col-md-3">
