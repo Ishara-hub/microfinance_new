@@ -264,7 +264,7 @@ function calculateEffectiveRate($annualRate, $repaymentMethod) {
                                     
                                     <div class="mb-3">
                                         <label class="form-label required">Interest Rate (%)</label>
-                                        <input type="number" name="interest_rate" class="form-control" min="0.01" step="0.01" required>
+                                        <input type="number" name="interest_rate" class="form-control" min="0.0001" step="0.0001" required>
                                     </div>
                                     
                                     <div class="mb-3">

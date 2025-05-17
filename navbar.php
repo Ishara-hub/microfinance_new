@@ -166,7 +166,7 @@ if (isset($_SESSION['user_id'])) {
                         <i class="fas fa-hand-holding-usd"></i>
                         <span>Loan Applications Daily & Business</span>
                     </a>
-                    <a href="loan_approval1.php" class="<?= basename($_SERVER['PHP_SELF']) == 'loan_approval1.php' ? 'active' : '' ?>">
+                    <a href="loan_approval.php" class="<?= basename($_SERVER['PHP_SELF']) == 'loan_approval.php' ? 'active' : '' ?>">
                         <i class="fas fa-check-circle"></i>
                         <span>Loan Approvals</span>
                     </a>

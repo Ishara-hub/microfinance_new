@@ -1,359 +1,231 @@
 <?php
-ob_start(); // Start output buffering at the VERY FIRST LINE
+ob_start();
 include "db.php";
 session_start();
 
-// Set page title
 $page_title = "Lease Approvals";
-
-// Include header
 include 'header.php';
 
 if (!$conn) {
     die("Database connection failed: " . mysqli_connect_error());
 }
 
-// Handle Lease Approval
+// Handle Loan Approval
 if (isset($_POST['approve'])) {
-    $lease_id = $_POST['lease_id'];
+    $loan_id = $_POST['loan_id'];
+    
+    // Fetch loan details for overview
+    $loanQuery = "SELECT ll.*, m.full_name, lp.name AS product_name 
+                 FROM lease_applications ll
+                 JOIN members m ON ll.member_id = m.id
+                 JOIN loan_products lp ON ll.loan_product_id = lp.id
+                 WHERE ll.id = ?";
+    $loanStmt = $conn->prepare($loanQuery);
+    $loanStmt->bind_param("s", $loan_id);
+    $loanStmt->execute();
+    $loanData = $loanStmt->get_result()->fetch_assoc();
 
-    // Fetch lease application details
-    $leaseQuery = "SELECT * FROM lease_applications WHERE id = ?";
-    $leaseStmt = $conn->prepare($leaseQuery);
-    $leaseStmt->bind_param("s", $lease_id);
-    $leaseStmt->execute();
-    $leaseResult = $leaseStmt->get_result();
-
-    if ($leaseResult->num_rows > 0) {
-        $leaseData = $leaseResult->fetch_assoc();
-
-        // Update lease status to 'approved'
-        $updateQuery = "UPDATE lease_applications SET status = 'approved' WHERE id = ?";
-        $updateStmt = $conn->prepare($updateQuery);
-        $updateStmt->bind_param("s", $lease_id);
-        $updateStmt->execute();
-
-        // Generate installment schedule
-        $loan_amount = $leaseData['loan_amount'];
-        $installments = $leaseData['installments'];
-        $rental_value = $leaseData['rental_value'];
-        $loan_product_id = $leaseData['loan_product_id'];
-        $disburse_date = date("Y-m-d");
-        $vehicle_id = $leaseData['vehicle_id'];
-
-        // Get repayment method and interest type
-        $productQuery = "SELECT repayment_method, interest_rate, interest_type FROM loan_products WHERE id = ?";
-        $productStmt = $conn->prepare($productQuery);
-        $productStmt->bind_param("i", $loan_product_id);
-        $productStmt->execute();
-        $productResult = $productStmt->get_result();
-        $productData = $productResult->fetch_assoc();
-        $repayment_method = $productData['repayment_method'];
-        $interest_rate = $productData['interest_rate'];
-        $interest_type = $productData['interest_type'];
-
-        // Insert installments into lease_details table
-        $due_date = $disburse_date;
-        $outstanding_loan = $loan_amount;
-
-        // Calculate total interest and rental value
-        $total_interest = $rental_value * $installments - $loan_amount;
-        $rental_value = ($loan_amount + $total_interest) / $installments;
-
-        for ($i = 0; $i < $installments; $i++) {
-            // Calculate due date based on repayment method
-            if ($repayment_method == "daily") {
-                $due_date = date("Y-m-d", strtotime($due_date . " +1 day"));
-            } elseif ($repayment_method == "weekly") {
-                $due_date = date("Y-m-d", strtotime($due_date . " +1 week"));
-            } elseif ($repayment_method == "monthly") {
-                $due_date = date("Y-m-d", strtotime($due_date . " +1 month"));
-            }
-
-            // Calculate interest due and capital due
-            if ($interest_type == 'flat_rate') {
-                $interest_due = $total_interest / $installments;
-                $capital_due = $loan_amount / $installments;
-            } elseif ($interest_type == 'reducing_balance') {
-                $interest_due = ($outstanding_loan * $interest_rate / 100) / $installments;
-                $capital_due = $rental_value - $interest_due;
-                $outstanding_loan -= $capital_due;
-            } else {
-                die("Invalid interest type!");
-            }
-
-            // Insert into lease_details table
-            $insertQuery = "INSERT INTO lease_details 
-                            (lease_application_id, vehicle_id, installment_number, installment_date, 
-                             installment_amount, capital_due, interest_due, total_due, status) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
-            $insertStmt = $conn->prepare($insertQuery);
-            $installment_number = $i + 1;
-            $total_due = $capital_due + $interest_due;
-            $insertStmt->bind_param("ssisdddd", $lease_id, $vehicle_id, $installment_number, $due_date, 
-                                   $rental_value, $capital_due, $interest_due, $total_due);
-            $insertStmt->execute();
-        }
-
-        // Update vehicle status to 'leased'
-        $updateVehicleQuery = "UPDATE lease_applications SET status = 'approved' WHERE id = ?";
-        $updateVehicleStmt = $conn->prepare($updateVehicleQuery);
-        $updateVehicleStmt->bind_param("s", $vehicle_id);
-        $updateVehicleStmt->execute();
-
+    // Update status to approved
+    $updateQuery = "UPDATE lease_applications SET status = 'approved' WHERE id = ?";
+    $updateStmt = $conn->prepare($updateQuery);
+    $updateStmt->bind_param("s", $loan_id);
+    
+    if ($updateStmt->execute()) {
         // Create notification
-        $message = "Lease $lease_id has been approved";
-        $link = "lease_details.php?id=$lease_id";
+        $message = "Loan $loan_id has been approved (pending disbursement)";
+        $link = "loan_details.php?id=$loan_id";
         $notificationQuery = "INSERT INTO notifications (user_id, message, link) VALUES (?, ?, ?)";
         $notificationStmt = $conn->prepare($notificationQuery);
         $notificationStmt->bind_param("iss", $_SESSION['user_id'], $message, $link);
         $notificationStmt->execute();
 
-        // Set session variable for success message
-        $_SESSION['approval_message'] = "Lease $lease_id approved successfully!";
-        
-        // Redirect
-        if ($updateStmt->execute()) {
-            ob_end_clean(); // Clean the buffer before redirect
-            header("Location: lease_approval.php");
-            exit();
-        }
+        $_SESSION['approval_message'] = "Loan $loan_id approved successfully! Waiting for disbursement.";
+        header("Location: lease_disburse.php");
+        exit();
     }
 }
 
-// Handle Lease Rejection
+// Handle Loan Rejection
 if (isset($_POST['reject'])) {
-    $lease_id = $_POST['lease_id'];
+    $loan_id = $_POST['loan_id'];
+    $reason = $_POST['reject_reason'] ?? 'No reason provided';
 
-    // Update lease status to 'rejected'
-    $updateQuery = "UPDATE lease_applications SET status = 'rejected' WHERE id = ?";
+    $updateQuery = "UPDATE lease_applications SET status = 'rejected', reject_reason = ? WHERE id = ?";
     $updateStmt = $conn->prepare($updateQuery);
-    $updateStmt->bind_param("s", $lease_id);
+    $updateStmt->bind_param("ss", $reason, $loan_id);
     $updateStmt->execute();
 
-    // Create notification
-    $message = "Lease $lease_id has been rejected";
-    $link = "lease_details.php?id=$lease_id";
+    $message = "Loan $loan_id has been rejected";
+    $link = "loan_details.php?id=$loan_id";
     $notificationQuery = "INSERT INTO notifications (user_id, message, link) VALUES (?, ?, ?)";
     $notificationStmt = $conn->prepare($notificationQuery);
     $notificationStmt->bind_param("iss", $_SESSION['user_id'], $message, $link);
     $notificationStmt->execute();
 
-    $_SESSION['approval_message'] = "Lease $lease_id rejected successfully!";
-    header("Location: lease_approval.php");
+    $_SESSION['approval_message'] = "Loan $loan_id rejected successfully!";
+    header("Location: loan_approval.php");
     exit();
 }
 
-// Fetch all lease applications
-$result = $conn->query("SELECT la.id, m.full_name, lp.name, la.loan_amount, 
-                        la.installments, la.status, la.created_at, v.vehicle_no, v.make, v.model 
-                        FROM lease_applications la
-                        JOIN members m ON la.member_id = m.id 
-                        JOIN loan_products lp ON la.loan_product_id = lp.id
-                        JOIN vehicles v ON la.vehicle_id = v.id
-                        ORDER BY 
-                            CASE 
-                                WHEN la.status = 'Pending' THEN 1
-                                WHEN la.status = 'Approved' THEN 2
-                                ELSE 3
-                            END,
-                            la.created_at DESC");
+// Fetch pending loan applications
+$result = $conn->query("SELECT ll.id, m.full_name, lp.name, ll.loan_amount, 
+                        ll.installments, ll.created_at, ll.credit_officer
+                        FROM lease_applications ll
+                        JOIN members m ON ll.member_id = m.id
+                        JOIN loan_products lp ON ll.loan_product_id = lp.id
+                        WHERE ll.status = 'Pending'
+                        ORDER BY ll.created_at DESC");
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Lease Approvals</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .status-pending { color: #ffc107; font-weight: bold; }
-        .status-approved { color: #28a745; font-weight: bold; }
-        .status-rejected { color: #dc3545; font-weight: bold; }
-        .auto-reload {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000;
-        }
-        .lease-id {
-            font-family: monospace;
-            font-weight: bold;
-        }
-        .vehicle-info {
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
-    </style>
-</head>
-<body>
-    <div class="container mt-5">
-        <?php if (isset($_SESSION['approval_message'])): ?>
-            <div class="alert alert-success alert-dismissible fade show">
-                <?= $_SESSION['approval_message'] ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            <?php unset($_SESSION['approval_message']); ?>
-        <?php endif; ?>
+<div class="container mt-5">
+    <?php if (isset($_SESSION['approval_message'])): ?>
+        <div class="alert alert-success alert-dismissible fade show">
+            <?= $_SESSION['approval_message'] ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php unset($_SESSION['approval_message']); ?>
+    <?php endif; ?>
 
-        <?php if (isset($_SESSION['error_message'])): ?>
-            <div class="alert alert-danger alert-dismissible fade show">
-                <?= $_SESSION['error_message'] ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            <?php unset($_SESSION['error_message']); ?>
-        <?php endif; ?>
-
-        <h2><i class="fas fa-car me-2"></i> Lease Applications</h2>
-        
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
+    <h2><i class="fas fa-file-signature me-2"></i> Pending Loan Approvals</h2>
+    
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <?php if ($result->num_rows > 0): ?>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead class="table-light">
                             <tr>
                                 <th>ID</th>
                                 <th>Member</th>
-                                <th>Lease Product</th>
-                                <th>Vehicle</th>
+                                <th>Loan Product</th>
                                 <th>Amount</th>
                                 <th>Installments</th>
-                                <th>Created At</th>
-                                <th>Status</th>
+                                <th>Applied On</th>
+                                <th>Purpose</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php while ($row = $result->fetch_assoc()) { ?>
+                            <?php while ($row = $result->fetch_assoc()): ?>
                                 <tr>
-                                    <td class="lease-id"><?= htmlspecialchars($row['id']); ?></td>
-                                    <td><?= htmlspecialchars($row['full_name']); ?></td>
-                                    <td><?= htmlspecialchars($row['name']); ?></td>
+                                    <td><?= htmlspecialchars($row['id']) ?></td>
+                                    <td><?= htmlspecialchars($row['full_name']) ?></td>
+                                    <td><?= htmlspecialchars($row['name']) ?></td>
+                                    <td><?= number_format($row['loan_amount'], 2) ?></td>
+                                    <td><?= $row['installments'] ?></td>
+                                    <td><?= date('Y-m-d', strtotime($row['created_at'])) ?></td>
+                                    <td><?= htmlspecialchars($row['credit_officer']) ?></td>
                                     <td>
-                                        <div><?= htmlspecialchars($row['vehicle_no']); ?></div>
-                                        <div class="vehicle-info"><?= htmlspecialchars($row['make'] . ' ' . $row['model']); ?></div>
-                                    </td>
-                                    <td><?= number_format($row['loan_amount'], 2); ?></td>
-                                    <td><?= $row['installments']; ?> <?= $row['installments'] == 1 ? 'Month' : 'Months'; ?></td>
-                                    <td><?= date('Y-m-d H:i', strtotime($row['created_at'])); ?></td>
-                                    <td class="status-<?= strtolower($row['status']) ?>">
-                                        <?= ucfirst($row['status']); ?>
-                                    </td>
-                                    <td>
-                                        <?php if ($row['status'] == 'Pending') { ?>
-                                            <form method="POST" class="d-inline">
-                                                <input type="hidden" name="lease_id" value="<?= htmlspecialchars($row['id']); ?>">
-                                                <button type="submit" name="approve" class="btn btn-success btn-sm">
-                                                    <i class="fas fa-check-circle me-1"></i> Approve
-                                                </button>
-                                                <button type="submit" name="reject" class="btn btn-danger btn-sm ms-1">
-                                                    <i class="fas fa-times-circle me-1"></i> Reject
-                                                </button>
-                                            </form>
-                                            <a href="lease_details.php?id=<?= htmlspecialchars($row['id']) ?>" class="btn btn-info btn-sm ms-1">
-                                                <i class="fas fa-eye me-1"></i> View
-                                            </a>
-                                        <?php } else { ?>
-                                            <a href="loan_details.php?id=<?= htmlspecialchars($row['id']) ?>" class="btn btn-info btn-sm">
-                                                <i class="fas fa-eye me-1"></i> View Details
-                                            </a>
-                                        <?php } ?>
+                                        <!-- View Details Button - Triggers Modal -->
+                                        <button class="btn btn-info btn-sm view-details" 
+                                                data-id="<?= $row['id'] ?>"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#loanDetailsModal">
+                                            <i class="fas fa-eye me-1"></i> View
+                                        </button>
+                                        
+                                        <!-- Approve/Reject Buttons -->
+                                        <form method="POST" class="d-inline">
+                                            <input type="hidden" name="loan_id" value="<?= $row['id'] ?>">
+                                            <button type="submit" name="approve" class="btn btn-success btn-sm">
+                                                <i class="fas fa-check-circle me-1"></i> Approve
+                                            </button>
+                                            <button type="button" class="btn btn-danger btn-sm ms-1 reject-btn"
+                                                    data-id="<?= $row['id'] ?>"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#rejectModal">
+                                                <i class="fas fa-times-circle me-1"></i> Reject
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
-                            <?php } ?>
+                            <?php endwhile; ?>
                         </tbody>
                     </table>
                 </div>
+            <?php else: ?>
+                <div class="alert alert-info">No pending loan applications found.</div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<!-- Loan Details Modal -->
+<div class="modal fade" id="loanDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Loan Application Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="loanDetailsContent">
+                <!-- Content loaded via AJAX -->
+                <div class="text-center my-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Auto-reload button -->
-    <div class="auto-reload">
-        <button class="btn btn-primary btn-sm" id="autoReloadBtn" title="Auto Refresh">
-            <i class="fas fa-sync-alt"></i> Auto Refresh
-        </button>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Auto-reload functionality
-            let autoReload = false;
-            let reloadInterval;
-            
-            $('#autoReloadBtn').click(function() {
-                autoReload = !autoReload;
-                
-                if (autoReload) {
-                    $(this).addClass('btn-success').removeClass('btn-primary');
-                    $(this).html('<i class="fas fa-sync-alt fa-spin"></i> Auto Refresh ON');
-                    reloadInterval = setInterval(function() {
-                        location.reload();
-                    }, 30000); // Reload every 30 seconds
-                } else {
-                    $(this).addClass('btn-primary').removeClass('btn-success');
-                    $(this).html('<i class="fas fa-sync-alt"></i> Auto Refresh');
-                    clearInterval(reloadInterval);
-                }
-            });
-
-            // Check for new lease applications periodically (without page reload)
-            function checkNewApplications() {
-                $.ajax({
-                    url: 'check_new_leases.php',
-                    method: 'GET',
-                    success: function(response) {
-                        if (response.count > 0) {
-                            // Show notification
-                            showNewApplicationNotification(response.count);
-                        }
-                    },
-                    complete: function() {
-                        setTimeout(checkNewApplications, 60000); // Check every minute
-                    }
-                });
-            }
-
-            function showNewApplicationNotification(count) {
-                // Create or update notification badge
-                let notificationBadge = $('#newLeaseBadge');
-                if (notificationBadge.length === 0) {
-                    $('h2').append(` <span class="badge bg-danger" id="newLeaseBadge">${count} New</span>`);
-                } else {
-                    notificationBadge.text(`${count} New`);
-                }
-                
-                // Show toast notification
-                const toast = $(`
-                    <div class="toast show position-fixed bottom-0 end-0 m-3" style="z-index: 9999">
-                        <div class="toast-header bg-primary text-white">
-                            <strong class="me-auto">New Lease Application</strong>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-                        </div>
-                        <div class="toast-body">
-                            There are ${count} new lease applications waiting for review.
-                            <a href="lease_approval.php" class="text-white fw-bold">Click to view</a>
-                        </div>
+<!-- Reject Loan Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Reject Loan Application</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="loan_id" id="rejectLoanId">
+                    <div class="mb-3">
+                        <label for="rejectReason" class="form-label">Reason for Rejection</label>
+                        <textarea class="form-control" id="rejectReason" name="reject_reason" rows="3" required></textarea>
                     </div>
-                `);
-                
-                $('body').append(toast);
-                
-                // Auto-remove after 5 seconds
-                setTimeout(function() {
-                    toast.remove();
-                }, 5000);
-            }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" name="reject" class="btn btn-danger">Confirm Rejection</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
-            // Start checking for new applications
-            checkNewApplications();
+<?php include 'footer.php'; ?>
+
+<script>
+$(document).ready(function() {
+    // Load loan details in modal
+    $('.view-details').click(function() {
+        const loanId = $(this).data('id');
+        $('#loanDetailsContent').html(`
+            <div class="text-center my-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        `);
+        
+        $.ajax({
+            url: 'get_loan_details.php',
+            method: 'GET',
+            data: { id: loanId },
+            success: function(response) {
+                $('#loanDetailsContent').html(response);
+            }
         });
-    </script>
-</body>
-</html>
-<?php
-// Include footer
-include 'footer.php';
-?>
+    });
+
+    // Set loan ID for rejection
+    $('.reject-btn').click(function() {
+        $('#rejectLoanId').val($(this).data('id'));
+    });
+});
+</script>
