@@ -206,17 +206,17 @@ $loan_prefix = [
     </style>
 </head>
 <body>
-    <div style="text-align: center; margin-bottom: 10px;">
-        <img src="assets/images/mf.png" alt="Company Logo" style="max-width: 150px; max-height: 150px;">
-    </div>
     <div class="receipt">
         <div class="header">
-            <div class="company-name">FAF SOLUTION (Pvt) Ltd </div>
+            <div style="text-align: center;">
+                <img src="assets/images/mf.png" alt="Company Logo" style="max-width: 150px; max-height: 250px; ">
+            </div>
+            <div class="company-name">OSHADI INVESTMENT (Pvt) Ltd </div>
             <div class="receipt-title"><?= $strings[$language]['receipt_title'] ?></div>
 
             <div class="receipt-info">
-                <div>123 Finance Street, Colombo</div>
-                <div>Tel: 0112 345 678 | Reg No: MF12345</div>
+                <div> PIGALA ROAD, PELAWATTA</div>
+                <div>Tel: 0768 605 734 | Reg No: MF12345</div>
             </div>
         </div>
 
@@ -290,6 +290,7 @@ $loan_prefix = [
                 <a href="?id=<?= $payment_id ?>&type=<?= $type ?>&lang=si">සිංහල</a>
             </div>
             <div class="no-print" style="margin-top: 15px;">
+                
                 <button onclick="window.print()" style="padding: 5px 10px;">Print Receipt</button>
                 <button onclick="window.close()" style="padding: 5px 10px;">Close Window</button>
             </div>
