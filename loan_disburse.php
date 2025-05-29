@@ -113,7 +113,7 @@ if (isset($_POST['disburse'])) {
 
         $_SESSION['disbursement_message'] = "Loan $loan_id disbursed successfully!";
         $_SESSION['voucher_loan_id'] = $loan_id; // For voucher printing
-        header("Location: payment_voucher.php?loan_id=$loan_id");
+        header("Location: loan-disburse.php?loan_id=$loan_id");
         exit();
     } else {
         $_SESSION['error_message'] = "Loan not found or not in approved status";
