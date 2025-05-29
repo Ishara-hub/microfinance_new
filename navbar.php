@@ -170,6 +170,10 @@ if (isset($_SESSION['user_id'])) {
                         <i class="fas fa-check-circle"></i>
                         <span>Loan Approvals</span>
                     </a>
+                    <a href="loan_disburse.php" class="<?= basename($_SERVER['PHP_SELF']) == 'loan_disburse.php' ? 'active' : '' ?>">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Loan Disburse</span>
+                    </a>
                     <a href="manage_payments.php" class="<?= basename($_SERVER['PHP_SELF']) == 'manage_payments.php' ? 'active' : '' ?>">
                         <i class="fas fa-money-bill-wave"></i>
                         <span>Manage Payments</span>
